@@ -80,14 +80,19 @@ const validate = (values?: Object = {}, schema: Schema): Promise<ValidationError
       const validator = schema.validators[optionName]
 
       if (typeof validator === 'function') {
-        const { valid, message } = validator(value, option, parsed, options, schema.params)
+        const result = validator(value, option, parsed, options, schema.params)
+        const { valid, message, isSchema } = result
         if (!valid) {
           error = createErrorObject(paramPath, value, optionName, option, message)
           errors.push(error)
         } else if (typeof valid.catch === 'function') {
-          promises.push(valid.catch(() => (
-            Promise.reject(createErrorObject(paramPath, valid, optionName, option, message))
-          )))
+          promises.push(valid.catch((schemaErrors) => {
+            if (isSchema) {
+              return errors.push(...schemaErrors)
+            }
+            const errorObject = createErrorObject(paramPath, valid, optionName, option, message)
+            return Promise.reject(errorObject)
+          }))
         }
       } else if (validator) {
         throw new Error(`[schm] ${paramName} validator must be a function`)
@@ -95,12 +100,15 @@ const validate = (values?: Object = {}, schema: Schema): Promise<ValidationError
     })
   })
 
-  if (errors.length) {
-    return Promise.reject(errors)
-  } else if (promises.length) {
-    return Promise.all(promises).then(() => parsed)
-  }
-  return Promise.resolve(parsed)
+  return Promise.all(promises).then(() => {
+    if (errors.length) {
+      return Promise.reject(errors)
+    }
+    return parsed
+  }, (e) => {
+    const allErrors = [].concat(errors, e)
+    return Promise.reject(allErrors)
+  })
 }
 
 export default validate

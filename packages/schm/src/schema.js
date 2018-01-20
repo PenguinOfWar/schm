@@ -1,32 +1,14 @@
 // @flow
 import merge from 'lodash/merge'
-import { isSchema } from './utils'
-import parse from './parse'
-import validate from './validate'
 import type { Schema, SchemaGroup } from './types'
+import { isSchema } from './utils'
 import parsers from './parsers'
 import validators from './validators'
+import parse from './parse'
+import validate from './validate'
+import parseParams from './parseParams'
 
-const isLiteralType = options => (
-  typeof options === 'function' || isSchema(options)
-)
-
-const isDefaultValue = options => (
-  !isLiteralType(options) && typeof options !== 'object'
-)
-
-const isNestedObject = options => (
-  !Array.isArray(options) &&
-  !isLiteralType(options) &&
-  !isDefaultValue(options) &&
-  !options.type
-)
-
-const isArrayWithNestedObject = options => (
-  Array.isArray(options) && isNestedObject(options[0])
-)
-
-const defaultSchema = (params?: Object = {}): Schema => ({
+export const defaultSchema = (params?: Object = {}): Schema => ({
   parsers,
   validators,
   parse(values) {
@@ -38,24 +20,7 @@ const defaultSchema = (params?: Object = {}): Schema => ({
   merge(...schemas) {
     return merge({}, this, ...schemas)
   },
-  params: Object.keys(params).reduce((finalParams, name) => {
-    let options = params[name]
-
-    if (isLiteralType(options)) {
-      options = { type: options }
-    } else if (isDefaultValue(options)) {
-      options = { type: options.constructor, default: options }
-    } else if (isArrayWithNestedObject(options)) {
-      options = [defaultSchema(options[0])]
-    } else if (isNestedObject(options)) {
-      options = defaultSchema(options)
-    }
-
-    return {
-      ...finalParams,
-      [name]: options,
-    }
-  }, {}),
+  params: parseParams(params),
 })
 
 /**

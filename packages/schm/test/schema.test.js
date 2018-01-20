@@ -82,6 +82,9 @@ describe('nested schema', () => {
       type: String,
       required: true,
     },
+    ppq: {
+      lol: [studentSchema],
+    },
   }, previous => previous.merge({
     parse(values) {
       parseMock(values)
@@ -94,19 +97,27 @@ describe('nested schema', () => {
       type: String,
       required: true,
     },
+    // NÃO ADIANTA, TEM QUE ACEITAR TYPE COMO SCHEMA
+    // TEM QUE REESCREVER ESSE NEGÓCIO
+    // ISSO DEVE SER RECURSIVO
     teacher: {
       type: teacherSchema,
       required: true,
     },
     assistantTeacher: teacherSchema,
     students: {
-      type: [studentSchema],
+      type: [{
+        type: [studentSchema],
+      }],
     },
     otherStudents: [studentSchema],
   })
 
-  it('rejects validation', async () => {
-    await expect(classSchema.validate()).rejects.toMatchSnapshot()
+  // console.log(classSchema.params.students.type[0].type[0].type)
+  console.log('parse', classSchema.parse({ teacher: { ppq: { lol: [{ teacher: { name: 'lol' } }] } } }).teacher.ppq)
+
+  it.only('rejects validation', async () => {
+    // await expect(classSchema.validate({ students: [[{ name: 'lol' }]] })).rejects.toMatchSnapshot()
   })
 
   it('resolves validation', async () => {

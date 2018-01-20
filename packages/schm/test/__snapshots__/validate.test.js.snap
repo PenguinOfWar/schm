@@ -323,26 +323,32 @@ Array [
 `;
 
 exports[`validate fails with promise 1`] = `
-Object {
-  "param": "foo",
-  "validator": "validate",
-}
+Array [
+  Object {
+    "param": "foo",
+    "validator": "validate",
+  },
+]
 `;
 
 exports[`validate fails with promise and message array 1`] = `
-Object {
-  "message": "[object Promise] is wrong!",
-  "param": "foo",
-  "validator": "validate",
-}
+Array [
+  Object {
+    "message": "[object Promise] is wrong!",
+    "param": "foo",
+    "validator": "validate",
+  },
+]
 `;
 
 exports[`validate fails with promise and message object 1`] = `
-Object {
-  "message": "[object Promise] is wrong!",
-  "param": "foo",
-  "validator": "validate",
-}
+Array [
+  Object {
+    "message": "[object Promise] is wrong!",
+    "param": "foo",
+    "validator": "validate",
+  },
+]
 `;
 
 exports[`validate passes with function 1`] = `

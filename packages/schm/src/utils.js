@@ -23,42 +23,65 @@ export const isSchema = (schema: ?Schema): boolean => !!(
 )
 
 export const mapValuesToSchema = (
-  values: Object,
+  values: Object = {},
   schema: Schema,
   transformValue: TransformValueFunction,
-  paramNames: string[] = []
+  paramNames: string[] = [],
 ): Object => (
   Object.keys(schema.params).reduce((finalParams, paramName) => {
     const options = schema.params[paramName]
     const value = values[paramName]
     let finalValue
 
-    if (isSchema(options)) {
-      finalValue = mapValuesToSchema(
+    if (isSchema(options.type)) {
+      finalValue = value ? mapValuesToSchema(
         value,
-        options,
+        options.type,
         transformValue,
-        [...paramNames, paramName]
-      )
-    } else if (Array.isArray(options)) {
+        [...paramNames, paramName],
+      ) : undefined
+    } else if (Array.isArray(options.type)) {
       const arrayValue = toArray(value)
 
-      if (isSchema(options[0])) {
-        finalValue = arrayValue.map((val, i) =>
-          mapValuesToSchema(
-            options[0].parse(val),
-            options[0],
+      if (isSchema(options.type[0].type)) {
+        finalValue = arrayValue.map((val, i) => mapValuesToSchema(
+          val,
+          options.type[0].type,
+          transformValue,
+          [...paramNames, paramName, `${i}`]
+        ))
+
+      // RECURSIVE
+      // RECURSIVE
+      // RECURSIVE
+      // RECURSIVE
+      // RECURSIVE
+      // RECURSIVE
+      } else if (Array.isArray(options.type[0].type)) {
+        const arrayValue = toArray((value || [])[0])
+
+        if (isSchema(options.type[0].type[0])) {
+          finalValue = arrayValue.map((val, i) => mapValuesToSchema(
+            val,
+            options.type[0].type[0].type,
             transformValue,
             [...paramNames, paramName, `${i}`]
           ))
-      } else {
-        finalValue = arrayValue.map((val, i) =>
-          transformValue(
+        } else {
+          finalValue = arrayValue.map((val, i) => transformValue(
             val,
-            options[0],
+            options.type[0].type[0],
             paramName,
             [...paramNames, paramName, i].join('.')
           ))
+        }
+      } else {
+        finalValue = arrayValue.map((val, i) => transformValue(
+          val,
+          options.type[0],
+          paramName,
+          [...paramNames, paramName, i].join('.')
+        ))
       }
     } else {
       finalValue = transformValue(

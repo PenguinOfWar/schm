@@ -6,11 +6,11 @@ export const type: Parser = (value, option) => {
   if (Array.isArray(option)) {
     return toArray(value).map(val => type(val, option[0]))
   }
-  if (value == null) {
-    return value
-  }
   if (isSchema(option)) {
     return option.parse(value)
+  }
+  if (value == null) {
+    return value
   }
   switch (option.name) {
     case 'RegExp': return new RegExp(value, 'i')

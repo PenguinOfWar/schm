@@ -1,5 +1,6 @@
 // @flow
 import omit from 'lodash/omit'
+import { isSchema } from './utils'
 import type { Validator } from './types'
 
 type ParsedOption = {
@@ -48,6 +49,13 @@ export const validate: Validator = (value, option, values, options, params) => {
     valid: optionValue(value, values, options, params),
     message,
   }
+}
+
+export const type: Validator = (value, option) => {
+  if (isSchema(option)) {
+    return { valid: option.validate(value), isSchema: true }
+  }
+  return { valid: true }
 }
 
 export const required: Validator = (value, option) => {
@@ -116,6 +124,7 @@ export const minlength: Validator = (value, option) => {
 }
 
 export default {
+  type,
   required,
   match,
   enum: enumValidator,

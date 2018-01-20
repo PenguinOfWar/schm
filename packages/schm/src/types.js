@@ -10,7 +10,8 @@ export type Parser = (
 
 export type ValidatorResponse = {
   valid: any,
-  message?: string
+  message?: string,
+  isSchema?: boolean,
 }
 
 export type Validator = (

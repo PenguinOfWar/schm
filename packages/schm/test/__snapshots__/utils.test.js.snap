@@ -1,0 +1,50 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`mapValuesToSchema 1`] = `
+Object {
+  "bar": Object {
+    "baz": Array [
+      Object {
+        "qux": Array [
+          Object {
+            "options": Object {
+              "type": [Function],
+            },
+            "paramName": "qux",
+            "paramPath": "bar.baz.0.qux.0",
+            "value": "1",
+          },
+          Object {
+            "options": Object {
+              "type": [Function],
+            },
+            "paramName": "qux",
+            "paramPath": "bar.baz.0.qux.1",
+            "value": "2",
+          },
+        ],
+      },
+      Object {
+        "qux": Array [
+          Object {
+            "options": Object {
+              "type": [Function],
+            },
+            "paramName": "qux",
+            "paramPath": "bar.baz.1.qux.0",
+            "value": "3",
+          },
+        ],
+      },
+    ],
+  },
+  "foo": Object {
+    "options": Object {
+      "type": [Function],
+    },
+    "paramName": "foo",
+    "paramPath": "foo",
+    "value": "foo",
+  },
+}
+`;

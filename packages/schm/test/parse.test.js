@@ -23,6 +23,7 @@ test('no schema', () => {
 test('type', () => {
   expect(parse({ foo: 2 }, schema({ foo: String }))).toEqual({ foo: '2' })
   expect(parse({ foo: 2 }, schema({ foo: { type: String } }))).toEqual({ foo: '2' })
+  expect(parse({ foo: 2 }, schema({ foo: [Boolean] }))).toEqual({ foo: [true] })
 })
 
 test('set', () => {
