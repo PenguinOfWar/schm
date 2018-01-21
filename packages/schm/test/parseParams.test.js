@@ -37,3 +37,17 @@ it('parses nested object', () => {
 it('parses array nested object', () => {
   expect(parseParams({ foo: [{ bar: String }] })).toMatchSnapshot()
 })
+
+it('parses deep array', () => {
+  expect(parseParams({ foo: [[[[[[String]]]]]] })).toMatchSnapshot()
+})
+
+it('parses type array', () => {
+  expect(parseParams({ foo: { type: [{ type: String }] } }))
+    .toEqual({ foo: { type: [{ type: String }] } })
+})
+
+it('parses without option', () => {
+  expect(parseParams({ foo: undefined }))
+    .toEqual({ foo: { type: String } })
+})

@@ -1,6 +1,5 @@
 // @flow
-import parse from './parse'
-import { mapValuesToSchema } from './utils'
+import mapValues from './mapValues'
 import type { Schema, ValidationError } from './types'
 
 const isPrimitive = arg =>
@@ -66,11 +65,11 @@ const createErrorObject = (
  * *\/
  */
 const validate = (values?: Object = {}, schema: Schema): Promise<ValidationError[]> => {
-  const parsed = parse(values, schema)
+  const parsed = schema.parse(values)
   const promises = []
   const errors = []
 
-  mapValuesToSchema(parsed, schema, (value, options, paramName, paramPath) => {
+  mapValues(parsed, schema.params, (value, options, paramName, paramPath) => {
     let error
 
     Object.keys(options).forEach((optionName) => {
@@ -82,6 +81,7 @@ const validate = (values?: Object = {}, schema: Schema): Promise<ValidationError
       if (typeof validator === 'function') {
         const result = validator(value, option, parsed, options, schema.params)
         const { valid, message, isSchema } = result
+
         if (!valid) {
           error = createErrorObject(paramPath, value, optionName, option, message)
           errors.push(error)

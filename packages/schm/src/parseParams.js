@@ -1,32 +1,33 @@
-import { isSchema } from './utils'
+// @flow
+import { isSchema, isFunction, isObject } from './utils'
 import { defaultSchema } from './schema'
 
-const isFunction = options => typeof options === 'function'
-const isObject = options => typeof options === 'object'
-const hasType = options => isObject(options) && options.type
+const hasType = (options: any): boolean => (
+  isObject(options) && options.type
+)
 
-const literalType = (options) => {
+const literalType = (options: any): Object => {
   if (isFunction(options) || isSchema(options)) {
     return { type: options }
   }
   return options
 }
 
-const defaultValue = (options) => {
+const defaultValue = (options: any): Object => {
   if (!isObject(options) && !isFunction(options)) {
     return { type: options.constructor, default: options }
   }
   return options
 }
 
-const nestedObject = (options) => {
+const nestedObject = (options: any): Object => {
   if (!isSchema(options) && isObject(options) && !hasType(options)) {
     return { type: defaultSchema(options) }
   }
   return options
 }
 
-const parseOptions = (options) => {
+const parseOptions = (options: any = String): Object => {
   if (Array.isArray(options)) {
     return { type: [parseOptions(options[0])] }
   }
@@ -39,7 +40,7 @@ const parseOptions = (options) => {
   return flow(options)
 }
 
-const parseParams = params => (
+const parseParams = (params: Object): Object => (
   Object.keys(params).reduce((finalParams, paramName) => ({
     ...finalParams,
     [paramName]: parseOptions(params[paramName]),

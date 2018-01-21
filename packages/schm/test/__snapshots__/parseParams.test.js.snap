@@ -41,6 +41,38 @@ Object {
 }
 `;
 
+exports[`parses deep array 1`] = `
+Object {
+  "foo": Object {
+    "type": Array [
+      Object {
+        "type": Array [
+          Object {
+            "type": Array [
+              Object {
+                "type": Array [
+                  Object {
+                    "type": Array [
+                      Object {
+                        "type": Array [
+                          Object {
+                            "type": [Function],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+}
+`;
+
 exports[`parses nested object 1`] = `
 Object {
   "foo": Object {
