@@ -1,6 +1,7 @@
 // @flow
-import mapValues from './mapValues'
 import type { Schema, ValidationError } from './types'
+import mapValues from './mapValues'
+import { parseValidatorOption } from './utils'
 
 const isPrimitive = arg =>
   arg == null || (typeof arg !== 'object' && typeof arg !== 'function')
@@ -21,13 +22,13 @@ const createErrorObject = (
   param: string,
   value: any,
   validator: string,
-  option: any,
+  optionValue: any,
   message?: string
 ): ValidationError => ({
   param,
   ...isPrimitive(value) ? { value } : {},
   validator,
-  ...isPrimitive(option) ? { [validator]: option } : {},
+  ...isPrimitive(optionValue) ? { [validator]: optionValue } : {},
   ...message ? { message: replaceMessage(message, param, value, validator) } : {},
 })
 
@@ -75,24 +76,37 @@ const validate = (values?: Object = {}, schema: Schema): Promise<ValidationError
     Object.keys(options).forEach((optionName) => {
       if (error) return
 
-      const option = options[optionName]
+      const option = parseValidatorOption(options[optionName], optionName === 'enum')
       const validator = schema.validators[optionName]
 
       if (typeof validator === 'function') {
-        const result = validator(value, option, parsed, options, schema.params)
+        const result = validator(value, option, options, parsed, schema.params)
         const { valid, message, isSchema } = result
 
         if (!valid) {
-          error = createErrorObject(paramPath, value, optionName, option, message)
+          error = createErrorObject(
+            paramPath,
+            value,
+            optionName,
+            option.optionValue,
+            message,
+          )
           errors.push(error)
         } else if (typeof valid.catch === 'function') {
-          promises.push(valid.catch((schemaErrors) => {
+          const promise = valid.catch((schemaErrors) => {
             if (isSchema) {
               return errors.push(...schemaErrors)
             }
-            const errorObject = createErrorObject(paramPath, valid, optionName, option, message)
+            const errorObject = createErrorObject(
+              paramPath,
+              valid,
+              optionName,
+              option.optionValue,
+              message,
+            )
             return Promise.reject(errorObject)
-          }))
+          })
+          promises.push(promise)
         }
       } else if (validator) {
         throw new Error(`[schm] ${paramName} validator must be a function`)
@@ -106,7 +120,7 @@ const validate = (values?: Object = {}, schema: Schema): Promise<ValidationError
     }
     return parsed
   }, (e) => {
-    const allErrors = [].concat(errors, e)
+    const allErrors = [].concat(errors, e || [])
     return Promise.reject(allErrors)
   })
 }

@@ -18,7 +18,11 @@ export const defaultSchema = (params?: Object = {}): Schema => ({
     return validate(values, this)
   },
   merge(...schemas) {
-    return merge({}, this, ...schemas)
+    const merged = merge({}, this, ...schemas)
+    return {
+      ...merged,
+      params: parseParams(merged.params),
+    }
   },
   params: parseParams(params),
 })

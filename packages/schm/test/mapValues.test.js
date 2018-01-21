@@ -38,8 +38,5 @@ it('maps values correctly', () => {
   const values = createClass()
   const transformValue = value => value
   expect(mapValues(values, classSchema.params, transformValue))
-    .toEqual({
-      foo: { bar: { baz: 'qux' } },
-      foos: ['bar', 'baz'],
-    })
+    .toMatchSnapshot()
 })

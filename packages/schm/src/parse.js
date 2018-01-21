@@ -1,6 +1,6 @@
 // @flow
-import mapValues from './mapValues'
 import type { Schema } from './types'
+import mapValues from './mapValues'
 
 /**
  * Parses a schema based on given values.
@@ -21,7 +21,7 @@ const parse = (values?: Object = {}, schema: Schema): Object => (
       const parser = schema.parsers[optionName]
 
       if (typeof parser === 'function') {
-        return parser(finalValue, option, values, options, schema.params)
+        return parser(finalValue, option, options, values, schema.params)
       } else if (parser) {
         throw new Error(`[schm] ${paramName} parser must be a function`)
       }

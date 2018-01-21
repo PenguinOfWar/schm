@@ -1,52 +1,25 @@
 // @flow
-import omit from 'lodash/omit'
-import { isSchema } from './utils'
 import type { Validator } from './types'
+import { isSchema, parseValidatorOption } from './utils'
 
-type ParsedOption = {
-  optionValue: any,
-  message?: string,
-}
-
-const isArrayAndHasMessage = (option: any): boolean => (
-  Array.isArray(option) &&
-  option.length === 2 &&
-  typeof option[1] === 'string'
-)
-
-const isValidatorObject = (option: any): boolean => (
-  option && (option.message || option.msg)
-)
-
-const parseOption = (option: any, ignoreArray?: boolean): ParsedOption => {
-  if (!ignoreArray && isArrayAndHasMessage(option)) {
-    return {
-      optionValue: option[0],
-      message: option[1],
-    }
-  } else if (isValidatorObject(option)) {
-    const optionWithoutMessage = omit(option, 'message', 'msg')
-    const optionValueKey = Object.keys(optionWithoutMessage)[0]
-    return {
-      optionValue: optionWithoutMessage[optionValueKey],
-      message: option.message || option.msg,
-    }
-  }
-  return { optionValue: option }
-}
-
-export const validate: Validator = (value, option, values, options, params) => {
-  const { optionValue, message } = parseOption(option)
+export const validate: Validator = (value, option, options, values, params) => {
+  const { optionValue, message } = option
   if (Array.isArray(optionValue)) {
     return optionValue.reduce((response, currentOption) => (
-      !response.valid ? response : validate(value, currentOption)
+      !response.valid ? response : validate(
+        value,
+        parseValidatorOption(currentOption),
+        options,
+        values,
+        params,
+      )
     ), { valid: true })
   }
   if (typeof optionValue !== 'function') {
     throw new Error('[schm] validate must be a function')
   }
   return {
-    valid: optionValue(value, values, options, params),
+    valid: optionValue(value, options, values, params),
     message,
   }
 }
@@ -59,7 +32,7 @@ export const type: Validator = (value, option) => {
 }
 
 export const required: Validator = (value, option) => {
-  const { optionValue, message } = parseOption(option)
+  const { optionValue, message } = option
   const valid = optionValue
     ? value != null && value !== '' && !Number.isNaN(value)
     : true
@@ -70,7 +43,7 @@ export const required: Validator = (value, option) => {
 }
 
 export const match: Validator = (value, option) => {
-  const { optionValue, message } = parseOption(option)
+  const { optionValue, message } = option
   if (!(optionValue instanceof RegExp)) {
     throw new Error('[schm] match must be a regex')
   }
@@ -81,7 +54,7 @@ export const match: Validator = (value, option) => {
 }
 
 export const enumValidator: Validator = (value, option) => {
-  const { optionValue, message } = parseOption(option, true)
+  const { optionValue, message } = option
   if (!Array.isArray(optionValue)) {
     throw new Error('[schm] enum must be an array')
   }
@@ -92,7 +65,7 @@ export const enumValidator: Validator = (value, option) => {
 }
 
 export const max: Validator = (value, option) => {
-  const { optionValue, message } = parseOption(option)
+  const { optionValue, message } = option
   return {
     valid: typeof value === 'undefined' || value <= optionValue,
     message: message || `{PARAM} must be lower than or equal ${optionValue}`,
@@ -100,7 +73,7 @@ export const max: Validator = (value, option) => {
 }
 
 export const min: Validator = (value, option) => {
-  const { optionValue, message } = parseOption(option)
+  const { optionValue, message } = option
   return {
     valid: typeof value === 'undefined' || value >= optionValue,
     message: message || `{PARAM} must be greater than or equal ${optionValue}`,
@@ -108,7 +81,7 @@ export const min: Validator = (value, option) => {
 }
 
 export const maxlength: Validator = (value, option) => {
-  const { optionValue, message } = parseOption(option)
+  const { optionValue, message } = option
   return {
     valid: typeof value === 'undefined' || value.length <= optionValue,
     message: message || `{PARAM} length must be lower than or equal ${optionValue}`,
@@ -116,7 +89,7 @@ export const maxlength: Validator = (value, option) => {
 }
 
 export const minlength: Validator = (value, option) => {
-  const { optionValue, message } = parseOption(option)
+  const { optionValue, message } = option
   return {
     valid: typeof value === 'undefined' || value.length >= optionValue,
     message: message || `{PARAM} length must be greater than or equal ${optionValue}`,

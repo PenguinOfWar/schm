@@ -3,8 +3,8 @@
 export type Parser = (
   value: any,
   option: any,
-  values?: Object,
   options?: Object,
+  values?: Object,
   params?: Object,
 ) => any
 
@@ -17,8 +17,8 @@ export type ValidatorResponse = {
 export type Validator = (
   value: any,
   option: any,
-  values?: Object,
   options?: Object,
+  values?: Object,
   params?: Object,
 ) => ValidatorResponse
 

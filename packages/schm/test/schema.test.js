@@ -1,3 +1,7 @@
+import { decamelizeKeys } from 'humps'
+import validatejs from 'validate.js'
+import faker, { name, lorem } from 'faker'
+import times from 'lodash/times'
 import schema from '../src/schema'
 
 test('parse', () => {
@@ -15,16 +19,91 @@ test('validate', async () => {
   await expect(schm.validate()).rejects.toMatchSnapshot()
 })
 
+test('custom parse', () => {
+  const customParse = previous => previous.merge({
+    parse(values) {
+      return decamelizeKeys(previous.parse(values))
+    },
+  })
+  const schm = schema({ fooBar: [{ barBaz: String }] }, customParse)
+  const values = {
+    fooBar: [
+      { barBaz: 'foo' },
+      { barBaz: 'bar' },
+    ],
+  }
+  expect(schm.parse(values)).toEqual({
+    foo_bar: [
+      { bar_baz: 'foo' },
+      { bar_baz: 'bar' },
+    ],
+  })
+})
+
+test('custom validate', async () => {
+  const customValidate = constraints => previous => previous.merge({
+    async validate(values) {
+      const parsed = previous.parse(values)
+      return validatejs(parsed, constraints)
+    },
+  })
+  const constraints = { foo: { presence: true } }
+  const schm = schema({ foo: String }, customValidate(constraints))
+  await expect(schm.validate()).resolves.toEqual({
+    foo: ["Foo can't be blank"],
+  })
+})
+
+test('custom parser', () => {
+  const customParser = previous => previous.merge({
+    parsers: {
+      exclaim: value => `${value}!!`,
+    },
+  })
+  const params = { foo: { type: String, exclaim: true } }
+  const schm = schema(params, customParser)
+  const values = { foo: 'bar' }
+  expect(schm.parse(values)).toEqual({ foo: 'bar!!' })
+})
+
+test('custom validator', async () => {
+  const customValidator = previous => previous.merge({
+    validators: {
+      exclamation: () => ({ valid: false }),
+    },
+  })
+  const params = { foo: { type: String, exclamation: true } }
+  const schm = schema(params, customValidator)
+  const values = { foo: 'bar' }
+  await expect(schm.validate(values)).rejects.toEqual([{
+    exclamation: true,
+    param: 'foo',
+    validator: 'exclamation',
+    value: 'bar',
+  }])
+})
+
+test('custom params', () => {
+  const customParams = previous => previous.merge({
+    params: {
+      bar: String,
+    },
+  })
+  const schm = schema({ foo: String }, customParams)
+  const values = { foo: 1, bar: 2 }
+  expect(schm.parse(values)).toEqual({ foo: '1', bar: '2' })
+})
+
 describe('composition', () => {
   it('composes schema group', () => {
-    const foo = params => previous => previous.merge({
+    const concatWithFoo = params => previous => previous.merge({
       params,
       parsers: {
         foo: (value, option) => `${value}${option}`,
       },
     })
 
-    const bar = params => previous => previous.merge({
+    const concatWithDefaultValue = params => previous => previous.merge({
       params: Object.keys(params).reduce((finalParams, name) => ({
         ...finalParams,
         [name]: {
@@ -36,19 +115,17 @@ describe('composition', () => {
       },
     })
 
-    expect(schema(
-      {
-        name: String,
+    const schm = schema({
+      name: String,
+    }, concatWithFoo({
+      name: {
+        foo: 'foo',
       },
-      foo({
-        name: {
-          foo: 'foo',
-        },
-      }),
-      bar({
-        name: 'bar',
-      })
-    ).parse({ name: 'test' })).toEqual({ name: 'testfoobar' })
+    }), concatWithDefaultValue({
+      name: 'bar',
+    }))
+
+    expect(schm.parse({ name: 'test' })).toEqual({ name: 'testfoobar' })
   })
 
   it('composes schema', () => {
@@ -62,55 +139,36 @@ describe('composition', () => {
 })
 
 describe('nested schema', () => {
-  const parseMock = jest.fn()
+  const createPerson = () => ({ name: name.firstName(), age: 20 })
+  const createStudent = () => ({ ...createPerson(), grade: 5 })
+  const createTeacher = () => ({ ...createPerson(), subjects: times(3, lorem.word) })
+  const createClass = () => ({
+    grade: 5,
+    subject: lorem.word(),
+    teacher: createTeacher(),
+    students: times(5, createStudent),
+  })
 
-  const studentSchema = schema({
-    name: {
-      type: String,
-      required: true,
-    },
+  const personSchema = schema({
+    name: String,
     age: Number,
-  }, previous => previous.merge({
-    parse(values) {
-      parseMock(values)
-      return previous.parse(values)
-    },
-  }))
-
-  const teacherSchema = schema({
-    name: {
-      type: String,
-      required: true,
-    },
-    ppq: {
-      lol: [studentSchema],
-    },
-  }, previous => previous.merge({
-    parse(values) {
-      parseMock(values)
-      return previous.parse(values)
-    },
-  }))
+  })
+  const studentSchema = schema(personSchema, {
+    grade: Number,
+  })
+  const teacherSchema = schema(personSchema, {
+    subjects: [String],
+  })
 
   const classSchema = schema({
-    name: {
-      type: String,
-      required: true,
-    },
-    // NÃO ADIANTA, TEM QUE ACEITAR TYPE COMO SCHEMA
-    // TEM QUE REESCREVER ESSE NEGÓCIO
-    // ISSO DEVE SER RECURSIVO
-    teacher: {
-      type: teacherSchema,
-      required: true,
-    },
-    assistantTeacher: teacherSchema,
-    students: {
-      type: [{
-        type: [studentSchema],
-      }],
-    },
-    otherStudents: [studentSchema],
+    grade: Number,
+    subject: String,
+    teacher: teacherSchema,
+    students: [studentSchema],
+  })
+
+  beforeEach(() => {
+    faker.seed(123)
   })
 
   // console.log(classSchema.params.students.type[0].type[0].type)
